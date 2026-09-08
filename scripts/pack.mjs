@@ -47,7 +47,9 @@ export async function packDistribution(destination) {
     await cp(path.join(root, 'LICENSE'), path.join(cliRoot, 'LICENSE'));
     await writeFile(
       path.join(cliRoot, 'README.md'),
-      '# ddflow CLI\n\nUnreleased build. Read-only tools for ddflow/v1 workflows. Licensed under MIT.\n\n' +
+      '# ddflow CLI\n\nVersion ' +
+        manifest.version +
+        '. Read-only tools for ddflow/v1 workflows. Licensed under MIT.\n\n' +
         'Requires Node.js ' +
         manifest.engines.node +
         '. npm installs runtime dependencies.\n\n' +
@@ -85,7 +87,7 @@ export async function packDistribution(destination) {
     await writeFile(path.join(output, 'SHA256SUMS'), checksums.join('\n') + '\n');
     await writeFile(
       path.join(output, 'INSTALL.md'),
-      '# ddflow installation\n\nUnreleased build ' +
+      '# ddflow installation\n\nVersion ' +
         manifest.version +
         '; protocol ddflow/v1; MIT license.\n\n' +
         'Extract ' +
@@ -97,7 +99,7 @@ export async function packDistribution(destination) {
         'If either Skill is already installed, stop execution and remove its complete installation before reinstalling both.\n' +
         'Invoke $ddflow-planner explicitly, then $ddflow-executor separately to execute.\n' +
         'ZCode explicit-only invocation relies on Skill instructions, not a native switch.\n\n' +
-        'Optional CLI requires Node.js ' +
+        'Install the matching CLI alongside both Skills by default. It requires Node.js ' +
         manifest.engines.node +
         ':\n\n' +
         '    npm install -g --omit=dev --ignore-scripts ./' +

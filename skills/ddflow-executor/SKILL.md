@@ -2,7 +2,7 @@
 name: ddflow-executor
 license: MIT
 metadata:
-  version: 0.1.0-private.1
+  version: 0.0.0
 description: Execute an existing ddflow document workflow only when the user explicitly invokes ddflow-executor or explicitly requests its execution phase. Preflight model bindings and required skills, dispatch bounded native workers, verify artifacts, preserve contracts, record truthful facts and stop all new launches on any final node failure. Never re-plan automatically.
 ---
 
@@ -35,6 +35,11 @@ Planner 完成、出现 ready 节点、工作流文件存在，都不等于用�
 6. 核对全部 pending 节点的模型、Agent、必需 Skill、工具、权限、业务规则与执行前提。
 7. 上游将生成的产物不是缺失外部输入；但外部输入和必要确认必须在相关节点启动前落实。
 8. 不能满足预检时报告并停止，未启动节点保持 pending，不写虚假的失败或开始时间。
+
+## 默认只读 Viewer
+
+确认目标目录且 workflow.md 与 nodes/ 已存在后，默认尝试启动已安装的 `ddflow view "<工作流目录绝对路径>"`；用户要求不启动时跳过。
+按[只读 Viewer 规则](../protocol/execution-protocol.md#只读-viewer)复用会话、确认实际地址；CLI 未安装时静默跳过，不安装、不询问、不阻塞执行。Viewer 的结果不替代全阶段预检或业务验收。
 
 ## 模型与 Skill
 

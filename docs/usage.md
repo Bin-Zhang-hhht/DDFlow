@@ -1,10 +1,10 @@
 # 使用
 
-项目尚未发版，当前使用本地构建包。两个 Skill 合并安装，CLI 可选；需要从源码打包时见[架构说明](architecture.md)。
+从 [v0.0.0 Release](https://github.com/Bin-Zhang-hhht/DDFlow/releases/tag/v0.0.0) 获取安装包与 `SHA256SUMS`。默认安装两个 Skill 和同版本 CLI（包含 Viewer）：先按下文安装两个 Skill，再完成 [CLI 安装](#安装-cli)。也可将 [README 中的安装提示词](../README.md#1-安装两个-skill-和-cli)复制给 AI 代为操作。两个 Skill 仍可脱离 CLI 独立使用；需要从源码打包时见[架构说明](architecture.md)。
 
 ## 安装两个 Skill
 
-准备 `ddflow-skills-0.1.0-private.1.tgz`，与随包 `SHA256SUMS` 核对后，在包所在目录运行。版本变化时替换文件名。
+准备 `ddflow-skills-0.0.0.tgz`，与随包 `SHA256SUMS` 核对后，在包所在目录运行。版本变化时替换文件名。
 
 ```powershell
 $skillRoot = Join-Path $env:USERPROFILE '.agents/skills'
@@ -15,7 +15,7 @@ foreach ($name in 'ddflow-planner', 'ddflow-executor') {
     }
 }
 New-Item -ItemType Directory -Force -Path $skillRoot | Out-Null
-tar -xzf .\ddflow-skills-0.1.0-private.1.tgz -C $skillRoot
+tar -xzf .\ddflow-skills-0.0.0.tgz -C $skillRoot
 if ($LASTEXITCODE -ne 0) { throw '解压失败，请检查安装目录' }
 ```
 
@@ -44,12 +44,12 @@ $ddflow-executor
 
 节点的 `Result` 记录交付和验收证据，`Error` 记录失败原因。节点失败后不会启动新任务；需要重试或改变计划时，先显式调用 Planner 重新规划，再调用 Executor。保留 completed / failed 历史，新尝试使用新节点；存在 running 时先由原执行者处理，不手动改回 pending。完整示例见[电商案例](online-retail.md)。
 
-## 安装可选 CLI
+## 安装 CLI
 
 需要 Node.js 22.13+（22 系列）或 24+ 以及 npm：
 
 ```powershell
-npm install -g --omit=dev --ignore-scripts .\ddflow-0.1.0-private.1.tgz
+npm install -g --omit=dev --ignore-scripts .\ddflow-0.0.0.tgz
 ddflow --help
 ddflow inspect C:\workflows\example --json
 ddflow view C:\workflows\example
@@ -94,6 +94,12 @@ JSON 返回诊断、工作流、节点、依赖边和 ready / blocked 节点列�
 结构合法不代表输入存在、模型可用、Skill 已加载或业务质量合格。模型及思考强度的请求与实际记录分别展示，缺少实际证据时不从请求值补齐。
 
 ## 查看工作流
+
+调用 Planner 或 Executor 后，目标目录明确且 workflow.md 与 nodes/ 已存在时，Skill 默认尝试启动已安装的 Viewer；新计划先写好文档。CLI 未安装则静默跳过，不安装、不询问，也不阻塞任务。用户明确要求不启动时跳过。
+
+主 Harness 优先复用当前会话中已确认属于同一目录且仍可访问的 Viewer，否则通过宿主可保留的原生终端会话尝试启动一次。成功后返回实际输出并确认可访问的本机地址；启动失败或未能确认时简短说明并继续。宿主无法保留进程时跳过，不另建后台服务。报告后可保留 Viewer 供查看，在对应终端按 Ctrl+C 或通过宿主会话停止；Viewer 不执行节点，也不影响 Planner / Executor 的显式调用边界。
+
+这项行为由 Skill 指令交给宿主执行，当前自动启动与复用流程尚未完成宿主实测。也可单独请 AI 启动 Viewer，或手动运行：
 
 ```powershell
 ddflow view C:\workflows\example

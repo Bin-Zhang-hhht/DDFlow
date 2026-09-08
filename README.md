@@ -1,61 +1,50 @@
-# ddflow
+# DDFlow: Document-Driven Flow
+
+[![Verify and Package (develop)](https://github.com/Bin-Zhang-hhht/DDFlow/actions/workflows/verify.yml/badge.svg?branch=develop)](https://github.com/Bin-Zhang-hhht/DDFlow/actions/workflows/verify.yml?query=branch%3Adevelop) [![Version: v0.0.0](https://img.shields.io/badge/Version-v0.0.0-5865F2)](package.json) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+面向多来源数据清洗与整理的 Agent 工作流 Skill。ddflow 将长任务拆成可检查的 Markdown 计划，用明确的模型分工执行，以实际产物验收，让任务从输入、处理到交付都有据可查。
+
+Document-Driven Flow: explicit plans, model assignments, and verifiable deliverables for long agent workflows.
+
+[快速开始](#快速开始) · [电商案例](docs/online-retail.md) · [产品文档](docs/product.md) · [架构文档](docs/architecture.md) · [使用手册](docs/usage.md)
 
 ![ddflow：Planner 规划任务，用户确认后由 Executor 编排多种模型执行并验收产物](docs/readme-banner.png)
 
-**把长任务拆成可检查的计划，用明确的模型分工执行，以实际产物验收。**
+## 能力与体验
 
-Document-Driven Flow 是一套依托 Agent 宿主运行的工作流 Skill，优先面向多来源数据清洗与整理。计划、依赖、执行结果都保存在 Markdown 中，便于检查和交接。
+ddflow 适合输入明确、包含多个处理步骤、需要复核结果的任务，例如统一多份交易表的字段和格式，核对异常，交付标准表、来源映射与质量报告。
 
-[开始使用](#快速开始) · [电商案例](docs/online-retail.md) · [产品](docs/product.md) · [架构](docs/architecture.md) · [使用手册](docs/usage.md)
+- **先检查计划**：Planner 写清目标、依赖、输入输出、模型和验收标准，用户检查后再启动 Executor。
+- **按约定执行**：由宿主派发 Agent 任务，指定模型不静默替换，原始数据只读，业务产物写入约定目录。
+- **以产物验收**：验收通过才记录完成；失败保留原因，停止启动新任务，继续时显式重新规划。
+- **随时查看进展**：Markdown 保存计划与执行事实；CLI 检查结构，Viewer 展示依赖图、节点正文和诊断。
 
-## 适合什么任务
-
-当任务需要多个步骤、不同模型分工，以及明确的交付标准时，可以使用 ddflow。例如：把多份来源不同的交易表统一字段和格式，复核异常，再交付标准表、来源映射和质量报告。
-
-- **先看计划，再执行**：Planner 写清目标、输入、输出、依赖和验收标准，用户检查后另行启动 Executor。
-- **明确模型与任务的对应关系**：按任务需要安排模型和 Skill，由宿主原生派发；指定模型不静默替换。
-- **保留可检查的执行事实**：产物验收通过才标记完成，结果和失败原因写回节点文档。
-- **按需查看进展**：可选 CLI 检查工作流，Viewer 展示依赖图、节点正文和诊断。
-
-极短任务或尚无验收标准的开放探索通常不需要拆成工作流。具体定位和边界见[产品文档](docs/product.md)。
-
-## 如何工作
-
-```mermaid
-flowchart LR
-    A[目标、输入与验收要求] --> B[显式调用 Planner]
-    B --> C[检查 Markdown 计划]
-    C --> D[另行显式调用 Executor]
-    D --> E[宿主分派任务并验收产物]
-    E --> F[记录结果与证据]
-```
-
-两个 Skill 配套安装，由用户分别调用。Planner 完成规划后停止；Executor 按静态依赖图推进任务。节点失败后停止启动新任务，已启动任务真实收敛；继续需要显式重新规划，保留失败历史。
-
-工作流本身只需要这些文件，业务数据和产物放在约定的工作区中：
-
-```text
-workflow/
-├── workflow.md       # 总体目标与全局约束
-└── nodes/
-    ├── 01-profile.md # 每个节点记录任务、依赖、状态和结果
-    ├── 02-clean.md
-    └── 03-review.md
-```
-
-节点编号用于阅读，执行顺序由 `depends_on` 决定。实际业务执行依赖宿主的 Agent、模型和工具能力。
+两个 Skill 由用户分别调用。实际模型与工具能力由宿主提供，极短任务或尚无验收标准的开放探索通常无需拆成工作流。
 
 ## 快速开始
 
-### 1. 安装两个 Skill
+### 1. 安装两个 Skill 和 CLI
 
-当前尚未正式发布，使用[本地构建的分发包](docs/architecture.md#构建与打包)。取得 `ddflow-skills-<版本>.tgz` 后，核对随包校验值，按[安装步骤](docs/usage.md#安装两个-skill)解压到宿主技能目录，保留两个完整 Skill 目录。
+**把下面这段话复制给你的 AI，让它帮你完成安装。** 请使用能访问本地文件、执行命令的 AI 编程助手。
 
-Skill 包自带三份运行协议，无需源码、Node.js 或 CLI。目标宿主为 Codex 和 ZCode；Codex 已有部分发现与执行验证，ZCode 原生安装发现和执行尚未验证。详细配置与限制见[宿主兼容说明](docs/usage.md#宿主差异与已知限制)。
+```text
+请帮我安装 ddflow 的 Planner、Executor 两个 Skill，以及同版本的 CLI（包含 Viewer）。
+项目地址：https://github.com/Bin-Zhang-hhht/DDFlow
+优先使用我提供的本地源码或分发包，否则从项目获取可用版本；告诉我实际安装的版本和来源。
+先阅读该版本的 docs/usage.md 和 docs/architecture.md，识别当前 AI 宿主，按文档安装到对应技能目录；无法识别时问我。
+使用完整的双 Skill 包和 CLI 包并核对 SHA256SUMS；如果只有源码，按文档构建分发包，不直接复制源码 Skill 目录。
+检查 CLI 所需的 Node.js 环境，按使用手册安装项目构建的 CLI 包，不安装 npm 上的同名包。
+发现已有安装时，先告诉我安装位置与版本，确认后再更新。
+完成后检查两个 Skill 的入口和随包引用文件，运行 ddflow --help 验证 CLI，告诉我安装路径，以及如何刷新宿主、调用 Skill 和打开 Viewer。
+```
 
-### 2. 生成计划
+当前版本为 **v0.0.0**，安装包见 [GitHub Releases](https://github.com/Bin-Zhang-hhht/DDFlow/releases/tag/v0.0.0)。已有本地源码或分发包时，把位置一并告诉 AI。默认一并安装两个 Skill 和 CLI；CLI 需要 Node.js，两个 Skill 仍可独立使用。手动操作见[安装说明](docs/usage.md#安装两个-skill)。
 
-在宿主中打开一个仓库外的业务工作区，将下面占位符替换为实际路径和可用模型，然后显式调用 Planner：
+目标宿主为 Codex 和 ZCode。Codex 已有部分发现与执行验证，ZCode 原生安装发现和执行尚未验证；详见[宿主兼容说明](docs/usage.md#宿主差异与已知限制)。
+
+### 2. 生成并检查计划
+
+在仓库外的业务工作区中，将占位符换成实际路径与可用模型，显式调用 Planner：
 
 ```text
 $ddflow-planner
@@ -67,7 +56,7 @@ $ddflow-planner
 请先澄清缺少的业务规则，只生成计划，完成后停止。
 ```
 
-预期得到 `workflow.md` 和 `nodes/*.md`。检查任务范围、模型安排、产物路径和验收标准。
+检查生成的 `workflow.md` 和 `nodes/*.md`，确认任务范围、依赖、模型、产物路径与验收要求。
 
 ### 3. 执行并检查结果
 
@@ -78,31 +67,42 @@ $ddflow-executor
 请执行 <工作流目录绝对路径> 中的计划，验收实际产物并记录结果。
 ```
 
-查看节点的 `Result` 获取产物位置和验收证据；失败原因记录在 `Error`。需要完整数据来源和逐步提示词时，使用[电商交易案例](docs/online-retail.md)。该案例是教程，业务执行尚未验证。
+查看节点 `Result` 中的产物位置与验收证据，失败原因记录在 `Error`。完整输入说明与提示词见[电商交易案例](docs/online-retail.md)；该案例为教程，业务执行尚未验证。
 
-### 可选：安装 CLI 和 Viewer
+### 查看工作流
 
-CLI 需要 Node.js 22.13+（22 系列）或 24+。在本地 CLI 包所在目录运行，版本和工作流路径按实际替换：
+调用 Planner 或 Executor 时，会在工作流文档就绪后默认尝试启动 Viewer，并返回实际访问地址；未安装 CLI 就直接跳过。也可以单独把这段话发给 AI：
 
-```powershell
-npm install -g --omit=dev --ignore-scripts .\ddflow-0.1.0-private.1.tgz
-ddflow inspect C:\workflows\example --json
-ddflow view C:\workflows\example
+```text
+请为 <工作流目录绝对路径> 启动 ddflow view，告诉我实际访问地址和停止服务的方法。
 ```
 
-Viewer 地址由终端输出，按 Ctrl+C 停止服务。两个命令都只读；结构检查不能代替业务验收。局部安装、更新卸载、退出码和 Viewer 行为见[使用手册](docs/usage.md)。
+Viewer 启动失败不阻塞任务；不需要时可直接告诉 AI 不启动。CLI 与 Viewer 都只读，结构检查不能代替业务验收。环境要求、手动安装与卸载见[使用手册](docs/usage.md#安装-cli)。
 
-## 文档与维护
+## 项目结构
 
-| 文档 | 内容 |
-|---|---|
-| [产品](docs/product.md) | 定位、用户流程、能力与边界 |
-| [架构](docs/architecture.md) | 组件职责、源码结构、构建、打包与检查 |
-| [使用](docs/usage.md) | 安装卸载、宿主兼容、执行与只读工具 |
-| [电商案例](docs/online-retail.md) | 数据来源、规划与执行提示词、预期产物 |
+```text
+.
+├── skills/
+│   ├── ddflow-planner/       # 规划入口与宿主配置
+│   ├── ddflow-executor/      # 执行入口与宿主配置
+│   └── protocol/             # Schema、执行协议与规划指南
+├── src/
+│   ├── workflow/             # 解析、校验与静态依赖计算
+│   ├── viewer/               # 本地只读服务与 Web 界面
+│   └── cli.ts                # inspect / view 入口
+├── scripts/                  # Skill 组装与双包构建
+├── tests/                    # 产品、Skill 独立安装与分发检查
+├── .github/workflows/        # 自动验证与候选包构建
+└── docs/                     # 产品、架构、使用、案例与图片
+```
 
-维护协议时阅读 `skills/protocol/` 下的 [Schema](skills/protocol/workflow-schema.md)、[执行协议](skills/protocol/execution-protocol.md)和[规划指南](skills/protocol/planning-guide.md)。打包时，它们复制到每个 Skill 的 `references/`，不需要维护两套副本。参与修改前阅读[仓库规则](AGENTS.md)。
+三份运行协议仅在 `skills/protocol/` 维护，构建时复制到每个 Skill 的 `references/`。业务工作流、数据与执行产物存放在用户指定的仓库外目录。
 
-## 许可证
+## 技术栈
 
-代码与文档采用 [MIT 许可证](LICENSE)。业务数据和专用成果不属于许可证授权范围，也不随软件分发。
+Markdown · YAML · Agent Skills · Node.js · TypeScript · React · Vite · React Flow · Dagre · Chokidar · GitHub Actions
+
+## 数据与许可
+
+代码与文档采用 [MIT License](LICENSE)。业务数据、专用处理代码、运行记录和数据处理成果不随软件分发，也不属于本项目许可证的授权范围。原始输入保持只读，业务执行与验收在约定的数据目录内完成。

@@ -2,7 +2,7 @@
 name: ddflow-planner
 license: MIT
 metadata:
-  version: 0.1.0-private.1
+  version: 0.0.0
 description: Plan or revise a document-driven workflow only when the user explicitly invokes ddflow-planner or explicitly requests its planning phase. Create a minimal, verifiable DAG with task-appropriate model assignments, bounded worker contracts and clear handoffs. Stop after planning; never start execution automatically.
 ---
 
@@ -37,6 +37,11 @@ Re-plan 或涉及失败 / 交接时读取 [execution-protocol.md](../protocol/ex
 5. 按独立验收、模型能力差异、稳定产物、风险边界与安全并行拆最小充分 DAG。
 6. 为每个节点写清 Goal、Prompt、Inputs、Outputs、Completion Criteria，初始化空 Result / Error。
 7. 校验文档与依赖，报告模型安排、未知项和执行前提，然后停止。
+
+## 默认只读 Viewer
+
+已有工作流在确认目标目录后，新计划在 workflow.md 与 nodes/ 写入后，默认尝试启动已安装的 `ddflow view "<工作流目录绝对路径>"`；用户要求不启动时跳过。
+按[只读 Viewer 规则](../protocol/execution-protocol.md#只读-viewer)复用会话、确认实际地址；CLI 未安装时静默跳过，不安装、不询问、不阻塞规划。Viewer 只展示文档，不启动 Executor 或业务节点。
 
 ## 模型与上下文
 

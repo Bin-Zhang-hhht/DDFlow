@@ -17,12 +17,14 @@ ddflow 是依托外部 Agent Harness 的长工作流 Skill 工具包，以 Markd
 
 两个入口不能自动互相切换。具体状态、失败停图和写入规则以 [执行协议](../skills/protocol/execution-protocol.md) 为准。
 
+工作流文档就绪后，两个 Skill 默认尝试启动或复用已安装的只读 Viewer，便于检查计划与进展。CLI 未安装则静默跳过；Viewer 启动失败不阻塞任务，用户也可要求不启动。这项展示行为不启动业务执行。
+
 ## 交付
 
 | 交付物 | 职责 |
 |---|---|
 | 双 Skill 包 | Planner 和 Executor 配套安装，分别显式调用，参考资料随包提供 |
-| 可选 CLI 包 | inspect 确定性检查，view 本地只读展示 |
+| CLI 包（默认一并安装，可单独省略） | inspect 确定性检查，view 本地只读展示 |
 
 目标宿主为 Codex 和 ZCode。安装方式见 [安装说明](usage.md)，支持范围见 [宿主兼容性](usage.md#宿主差异与已知限制)。没有 CLI 时仍可按协议读取文档，但不能声称运行过确定性检查。
 
