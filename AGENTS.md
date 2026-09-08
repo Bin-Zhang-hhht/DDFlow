@@ -14,7 +14,7 @@
 
 GitHub Actions 在普通分支推送、PR 和手动运行时只验证源码与 Skill 组装，不生成或上传分发压缩包。只有显式推送 `v*` tag 才执行分发安装验收、打包和附件上传；tag 必须等于 `v` 加 `package.json` 版本，且指向 `main` 历史中的提交。本地创建 tag 不触发 GitHub Actions，创建及推送 tag 仍需用户明确授权。
 
-工作流不自动更新分支、创建发布标签、GitHub Release 或执行 registry 发布。验证工作流保持最小只读仓库权限，复用现有构建与验收脚本。tag 构建附件不等于已发布 GitHub Release 或 npm 包，绿色检查不替代用户发布授权。
+经用户授权明确推送版本 tag 后，两个平台的验证、分发安装与打包均通过才自动创建 GitHub Release，附上 Ubuntu 构建的两个安装包、SHA256SUMS 和 INSTALL.md；发布说明维护在 `docs/releases/<tag>.md`。验证任务保持 `contents: read`，仅发布任务使用 `contents: write`。工作流不自动更新分支、创建发布标签或执行 registry 发布，不覆盖已有 Release；tag 构建附件不等于已发布 Release，绿色检查不替代用户发布授权。
 
 真实数据处理的测试与运行均在用户指定的数据目录内进行；原始数据、结果、中间文件和含数据的日志只保留在该目录，不写入项目仓库或外部服务。仓库中不保留具体数据任务的专用代码或实验记录。
 

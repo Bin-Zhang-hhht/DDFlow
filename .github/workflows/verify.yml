@@ -81,7 +81,7 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         run: npm run pack:local -- "${{ runner.temp }}/ddflow-packages"
 
-      # CI artifacts are candidate builds; this workflow does not publish releases.
+      # Each platform uploads candidates; release waits for the whole matrix.
       - name: Upload candidate packages
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v7
@@ -94,3 +94,47 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
+
+  release:
+    name: Publish GitHub Release
+    needs: verify
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release notes
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Publish one canonical set of platform-independent JS and Markdown packages.
+      - name: Download verified packages
+        uses: actions/download-artifact@v8
+        with:
+          name: ddflow-${{ github.ref_name }}-ubuntu-latest-${{ github.sha }}
+          path: ${{ runner.temp }}/ddflow-release
+
+      - name: Verify archive checksums
+        working-directory: ${{ runner.temp }}/ddflow-release
+        run: sha256sum --check --strict SHA256SUMS
+
+      - name: Create Release with installation assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          PACKAGE_DIR: ${{ runner.temp }}/ddflow-release
+        shell: bash
+        run: |
+          flags=()
+          if [[ "$TAG" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$TAG" \
+            --verify-tag \
+            --title "DDFlow $TAG" \
+            --notes-file "docs/releases/$TAG.md" \
+            "${flags[@]}" \
+            "$PACKAGE_DIR"/*.tgz \
+            "$PACKAGE_DIR/SHA256SUMS" \
+            "$PACKAGE_DIR/INSTALL.md"

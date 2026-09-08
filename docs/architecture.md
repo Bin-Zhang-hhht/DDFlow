@@ -81,13 +81,17 @@ npm run check:package
 | 推送 `develop` / `main` | 安装锁定依赖、Lint、格式、构建与测试，不生成或上传分发压缩包 |
 | PR 目标为 `develop` / `main` | 同上，只验证 |
 | 手动运行（包括选择 tag） | 同上，只验证 |
-| 显式推送 `v*` tag | 校验 tag 与版本、main 归属，执行全部验证后验收分发安装、打包并上传附件 |
+| 显式推送 `v*` tag | 校验 tag 与版本、main 归属，执行全部验证后验收分发安装、打包并上传附件；两平台均通过后创建 GitHub Release |
 
-tag 名须与 `package.json` 对应，例如包版本 `0.0.0` 对应 `v0.0.0`；双 Skill 版本一致性由已有 Skill 检查保证。tag 指向的提交必须属于 `origin/main` 历史，不能直接给仅在 `develop` 上的提交打 tag 来绕过版本晋升。仅在本地创建 tag 不会触发 GitHub Actions，必须将该 tag 推送到远端。非 `v*` tag 不触发工作流；格式匹配但版本或归属校验失败时不打包。工作流仍不创建 GitHub Release 或发布到 npm。
+tag 名须与 `package.json` 对应，例如包版本 `0.0.0` 对应 `v0.0.0`；双 Skill 版本一致性由已有 Skill 检查保证。tag 指向的提交必须属于 `origin/main` 历史，不能直接给仅在 `develop` 上的提交打 tag 来绕过版本晋升。仅在本地创建 tag 不会触发 GitHub Actions，必须将该 tag 推送到远端。非 `v*` tag 不触发工作流；格式匹配但版本或归属校验失败时不打包。工作流不发布到 npm。
 
 Linux 与 Windows 均使用 Node.js 24，pnpm 版本取自 `package.json`。日常验证依次执行锁定依赖安装、`lint`、`format:check`、`test`；`test` 已包含构建和独立 Skill 组装检查，不生成分发压缩包。只有 tag 推送额外执行 `npm run check:package`，通过后运行 `npm run pack:local`；打包命令会再次执行其自带的构建与 Skill 检查。此矩阵不代表 Node.js 22、其他操作系统或宿主原生执行已经验证。
 
-打包输出放在 runner 临时目录，仅上传两个 `.tgz`、`SHA256SUMS` 与 `INSTALL.md`。附件名包含 tag、平台和提交 SHA，保留 14 天；每个平台只在自身检查通过后上传，整次运行仍需两个平台均通过。工作流只有 `contents: read` 仓库权限，不使用发布密钥，不写分支或标签、不创建 GitHub Release、不发布到 registry，也不上传业务工作流、实验数据或日志。
+打包输出放在 runner 临时目录，仅上传两个 `.tgz`、`SHA256SUMS` 与 `INSTALL.md`。CI 附件名包含 tag、平台和提交 SHA，保留 14 天；每个平台只在自身检查通过后上传，整次运行仍需两个平台均通过。
+
+发布任务依赖整个验证矩阵成功，仅在 tag 推送时执行。它下载本次 Ubuntu 构建的跨平台 JavaScript 与 Markdown 包，复核 SHA256SUMS，通过 GitHub CLI 创建 Release 并附上四个文件。发布说明来自 `docs/releases/<tag>.md`，发版前须随版本提交；含连字符的预发布版本标记为 prerelease。使用 `--verify-tag` 防止意外创建 tag，不覆盖已有 Release 或附件；失败时先检查是否留下草稿，不移动版本 tag。
+
+验证任务保持 `contents: read`，仅发布任务使用 `contents: write` 和 GitHub 提供的短期 token，不需另配发布密钥。工作流不写分支或标签、不发布到 registry，也不上传业务工作流、实验数据或日志。只有 Release 页面和附件实际可用才算发布成功。
 
 `workflow_dispatch` 的手动入口需工作流存在于 GitHub 默认分支。tag 打包使用该 tag 对应提交中的工作流，因此应在获准的版本晋升时将工作流一并纳入 `main`，之后再明确创建并推送版本 tag。本地手动构建命令不受 CI 触发条件限制。当前配置尚未在 GitHub 上通过真实 tag 推送验证。
 
