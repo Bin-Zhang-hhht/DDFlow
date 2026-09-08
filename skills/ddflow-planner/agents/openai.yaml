@@ -1,0 +1,5 @@
+interface:
+  display_name: ddflow 规划
+  short_description: 为长工作流编写可验收任务与模型分工，完成规划后停止，不自动执行
+policy:
+  allow_implicit_invocation: false

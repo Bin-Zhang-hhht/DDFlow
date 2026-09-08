@@ -1,0 +1,5 @@
+interface:
+  display_name: ddflow 执行
+  short_description: 按已确认文档派发任务并核对实际产物，节点失败后停止启动新任务
+policy:
+  allow_implicit_invocation: false

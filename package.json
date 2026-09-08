@@ -1,0 +1,62 @@
+{
+  "name": "ddflow",
+  "version": "0.1.0-private.1",
+  "private": true,
+  "license": "MIT",
+  "description": "Document-Driven Flow: document contracts and read-only workflow inspection.",
+  "type": "module",
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.web.json && vite build src/viewer/web --outDir ../../../dist/viewer/web --emptyOutDir",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.web.json",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "inspect": "node dist/cli.js inspect",
+    "view": "node dist/cli.js view",
+    "test": "pnpm build && node --test tests/*.test.mjs",
+    "check:skills": "node --test tests/skills.test.mjs",
+    "pack:local": "pnpm build && pnpm check:skills && node scripts/pack.mjs",
+    "check:package": "node --test tests/package.integration.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.3.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "eslint": "^10.10.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.69.0",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "^3.1.1",
+    "@xyflow/react": "^12.11.6",
+    "chokidar": "^5.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "yaml": "^2.9.0"
+  },
+  "bin": {
+    "ddflow": "dist/cli.js"
+  },
+  "files": [
+    "dist/cli.js",
+    "dist/index.js",
+    "dist/workflow/*.js",
+    "dist/viewer/types.js",
+    "dist/viewer/server/*.js",
+    "dist/viewer/web/index.html",
+    "dist/viewer/web/assets/**",
+    "dist/viewer/web/THIRD-PARTY-LICENSES.md"
+  ]
+}
