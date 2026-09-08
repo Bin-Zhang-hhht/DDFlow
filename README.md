@@ -1,6 +1,6 @@
 # DDFlow: Document-Driven Flow
 
-[![Verify and Package (develop)](https://github.com/Bin-Zhang-hhht/DDFlow/actions/workflows/verify.yml/badge.svg?branch=develop)](https://github.com/Bin-Zhang-hhht/DDFlow/actions/workflows/verify.yml?query=branch%3Adevelop) [![Version: v0.0.0](https://img.shields.io/badge/Version-v0.0.0-5865F2)](package.json) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Verify and Package (main)](https://github.com/Bin-Zhang-hhht/DDFlow/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/Bin-Zhang-hhht/DDFlow/actions/workflows/verify.yml?query=branch%3Amain) [![Latest Release](https://img.shields.io/github/v/release/Bin-Zhang-hhht/DDFlow?label=Version&color=5865F2)](https://github.com/Bin-Zhang-hhht/DDFlow/releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 面向多来源数据清洗与整理的 Agent 工作流 Skill。ddflow 将长任务拆成可检查的 Markdown 计划，用明确的模型分工执行，以实际产物验收，让任务从输入、处理到交付都有据可查。
 
