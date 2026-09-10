@@ -8,16 +8,24 @@ Markdown 是唯一持久化工作流状态，节点文件即集合，depends_on 
 
 | 组件 | 职责 |
 |---|---|
-| Planner | 写 Contract、静态 DAG 和模型安排；只直接编辑 pending，发现 running 时只读 |
-| Executor / 主 Harness | 原生派发、Completion Gate、默认唯一节点文档写入者；每波重读、重校验 |
-| Worker | 在独立上下文内执行节点，只写约定产物，不修改工作流、规则或验收器 |
+| Planner | 写 Contract、静态 DAG 和模型安排，准备规则、脚本与固定校验器；只直接编辑 pending，发现 running 时文档与材料均只读 |
+| Executor / 主 Harness | 原生派发、最小交付与证据门槛、默认唯一节点文档写入者；每波重读、重校验，不承担业务内容复核 |
+| Worker | 在独立上下文内执行处理或既定复核节点，调用固定程序并返回证据；只写约定产物，不修改工作流、固定规则或验收器 |
 | Parser / Validator / Graph | 解析 YAML / Markdown，校验结构与 DAG，派生 ready / blocked |
 | inspect | 输出诊断和节点摘要，不执行正文命令或调用模型 |
 | Viewer | 复用解析器，展示文档和诊断，不写工作流或启动任务 |
 
 模型引用对 Core 不透明，不做供应商映射。model_used 和 reasoning_effort_used 仅由宿主证据填写。安装、权限与派发差异通过原生能力和说明处理，不增加统一运行时 Adapter。
 
+执行准备材料保存在用户指定的仓库外业务工作区，通过现有 Inputs / Prompt / Completion Criteria 引用，在 Execution Notes 记录来源、用途和实际检查范围。材料不是工作流状态，不为准备完成创建 completed 节点；Planner 不处理真实数据或试跑业务程序。执行时使用真实产物与检查证据验收，被历史节点引用的材料不能原地覆盖。节点内可以复用宿主程序化工具调用能力组合已知步骤，不新增 PTC Runtime 或跨节点调度器；具体行为见[规划指南](../skills/protocol/planning-guide.md#规划阶段的执行准备)与[执行协议](../skills/protocol/execution-protocol.md#使用规划准备材料)。
+
+Completion Gate 核对返回归属、产物可访问性、证据与当前交付的对应关系及明确通过条件。确定性检查由程序执行，语义验收由计划内的 Agent Task 复核节点执行；主模型采纳其明确结果，不重复分析业务内容。证据齐全时不重复检查；出现缺失、矛盾或对象变化时按执行协议针对性处理。检查安排与证据要求使用现有 Contract 正文，执行事实仍记录在 Result / Error，不新增状态或调度组件。
+
+ZCode 由用户手动配置子 Agent，Planner 通过现有 agent.recommended 和节点 Prompt 约定真实 Agent，Executor 按名派发并沿用配置，不在调用时覆盖模型或思考强度。Viewer 从现有元数据展示 Agent；模型 / 强度在请求与实际记录均缺省时隐藏，不增加 Schema 字段。
+
 两个 Skill 在工作流文档就绪后，通过宿主原生终端会话默认尝试启动或复用已安装的 `ddflow view`。未安装时静默跳过，展示失败不阻塞任务；这由 Skill 指令约定，不新增 CLI 自动执行入口、daemon 或持久进程状态。会话、复用与地址证据见[只读 Viewer 规则](../skills/protocol/execution-protocol.md#只读-viewer)，宿主实测状态见[使用说明](usage.md#查看工作流)。
+
+Planner 将 CLI 可用性检查与 Viewer 展示作为最终报告前的收尾步骤。地址确认后由宿主原生浏览器能力打开页面；缺少能力时返回实际链接。CLI 本身不自动开浏览器，Skill 不隐式下载 CLI，也不重复打开已展示的同一 Viewer。
 
 ## 只读工具
 
@@ -83,7 +91,7 @@ npm run check:package
 | 手动运行（包括选择 tag） | 同上，只验证 |
 | 显式推送 `v*` tag | 校验 tag 与版本、main 归属，执行全部验证后验收分发安装、打包并上传附件；两平台均通过后创建 GitHub Release |
 
-tag 名须与 `package.json` 对应，例如包版本 `0.0.0` 对应 `v0.0.0`；双 Skill 版本一致性由已有 Skill 检查保证。tag 指向的提交必须属于 `origin/main` 历史，不能直接给仅在 `develop` 上的提交打 tag 来绕过版本晋升。仅在本地创建 tag 不会触发 GitHub Actions，必须将该 tag 推送到远端。非 `v*` tag 不触发工作流；格式匹配但版本或归属校验失败时不打包。工作流不发布到 npm。
+tag 名须与 `package.json` 对应，例如包版本 `0.0.1` 对应 `v0.0.1`；双 Skill 版本一致性由已有 Skill 检查保证。tag 指向的提交必须属于 `origin/main` 历史，不能直接给仅在 `develop` 上的提交打 tag 来绕过版本晋升。仅在本地创建 tag 不会触发 GitHub Actions，必须将该 tag 推送到远端。非 `v*` tag 不触发工作流；格式匹配但版本或归属校验失败时不打包。工作流不发布到 npm。
 
 Linux 与 Windows 均使用 Node.js 24，pnpm 版本取自 `package.json`。日常验证依次执行锁定依赖安装、`lint`、`format:check`、`test`；`test` 已包含构建和独立 Skill 组装检查，不生成分发压缩包。只有 tag 推送额外执行 `npm run check:package`，通过后运行 `npm run pack:local`；打包命令会再次执行其自带的构建与 Skill 检查。此矩阵不代表 Node.js 22、其他操作系统或宿主原生执行已经验证。
 

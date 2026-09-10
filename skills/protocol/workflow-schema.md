@@ -127,17 +127,19 @@ execution:
   status: pending
 ```
 
-以上演示请求配置，不证明目标环境支持。Planner 在宿主支持且取值可核实时应明确填写强度；省略表示接受已披露的宿主默认值，不自动补成 medium。允许只指定强度而省略 model，此时必须核对宿主默认模型是否支持该强度。
+以上演示请求配置，不证明目标环境支持。Planner 在宿主支持且取值可核实时应明确填写强度；省略表示接受已披露的所选子 Agent 配置或宿主默认值，不自动补成 medium。允许只指定强度而省略 model，此时必须核对所选模型是否支持该强度。
 
-显式强度与 model 同属 Contract，不得忽略、映射成另一强度或在重试时自动提高。值不受支持、无法传入或已知被覆盖时，按执行协议停止。只缺少生效证据时披露未知，不把已接受可观察性限制的低风险任务自动判为失败。
+显式强度与 model 同属 Contract，不得忽略、映射成另一强度或在重试时自动提高。值不受支持、无法通过调用参数或已配置子 Agent 落实、或已知被覆盖时，按执行协议停止。只缺少生效证据时披露未知，不把已接受可观察性限制的低风险任务自动判为失败。
 
 `execution.reasoning_effort_used` 表示宿主确认的、覆盖解析后的 worker 生效设置，不是内部思考量或 reasoning tokens。主 Harness 在 Result 说明证据来源；请求参数、父会话设置或 worker 自述不足以直接填入。即使请求字段省略，仍可记录有证据的默认生效值；实际模型未知时也不由该设置反推 model_used。未知时省略，不用请求值补齐。
 
 ## 5. model、agent、skills 的区别
 
-`model` 设置后是任务约束；不可用或被覆盖时必须停止启动，不能静默继承默认模型。缺省 model 仍允许使用已披露的宿主默认模型，不表示自动最低价选择。
+`model` 设置后是任务约束；不可用或被覆盖时必须停止启动，不能静默继承默认模型。缺省 model 允许使用已披露的所选子 Agent 配置或宿主默认模型，不表示自动最低价选择。
 
-`agent.recommended / agent.profile` 是提示。退化为 Generic Agent 只有在所需模型、Skill、工具和权限仍得到满足时才成立；必须在预检 / 结果说明中披露实际执行方式。
+`agent.recommended / agent.profile` 是提示。退化为 Generic Agent 只有在 Contract 未要求使用该 Agent，且所需模型、Skill、工具和权限仍得到满足时才成立；必须在预检 / 结果说明中披露实际执行方式。
+
+若节点 Prompt 明确要求使用预定义子 Agent，该要求同属 Contract，不能因字段名为 recommended 就忽略。ZCode 按[规划指南](planning-guide.md#zcode-预定义子-agent)引用用户手动配置的 Agent，可省略模型和强度以沿用其配置；执行规则见[预定义子 Agent 派发](execution-protocol.md#zcode-预定义子-agent-派发)。不新增宿主配置字段或 Agent Registry。
 
 `skills` 是知识 / 方法依赖，不是新的执行节点，也不是安全授权。名称必须来自用户指定或本地真实目录；不能为满足字段而创建虚构名称。缺失时停止预检或交由用户显式 Re-plan 调整；不自动联网安装。
 
@@ -170,6 +172,8 @@ Goal、Prompt、Completion Criteria 必须非空。其他四个可为空，便�
 如果 B 实际需要 A 的产物，Planner 必须使 A 成为 B 的前置（直接或通过真实链路）。为确保 worker 能找到资料，可在 Inputs 明确上游节点 ID 和对应文件路径。依赖不应仅为“相关”而添加，也不能漏掉实际前置。
 
 业务路径以 workflow 的 Execution Notes 约定工作区为基准。Parser / Viewer 不把任意产物路径暴露为不限范围的文件读取接口。
+
+Planner 提前准备的规则、执行脚本与固定校验器是已有外部输入，路径和用途写入 Inputs，来源与实际检查范围写入 Execution Notes。不为准备材料创建 completed 节点或新增执行字段；新节点仍为 pending，Result / Error 留空。执行节点将生成的材料仍须声明真实 depends_on；准备文件不能代替上游产物或业务验收证据。准备与历史保护规则见[规划指南](planning-guide.md#规划阶段的执行准备)。
 
 ## 8. 写入所有权
 
@@ -213,7 +217,7 @@ completed 的 Result 为空；failed 的 Error 为空；running 无 started_at�
 
 ### 不属于 Schema Validator 的预检
 
-模型是否可用、Skill 是否安装、文件权限是否真实生效、用户是否完成必要确认、输出语义是否正确，都不是仅靠静态文档能证明的事实，需由 Harness 预检 / 业务验收。
+模型是否可用、Skill 是否安装、文件权限是否真实生效、用户是否完成必要确认、输出语义是否正确，都不是仅靠静态文档能证明的事实。能力与权限由 Harness 预检；业务验收由既定程序 / 复核节点执行，主 Harness 只核对交付与证据，见[Completion Gate](execution-protocol.md#8-completion-gate)。
 
 ## 11. 只读结果结构
 

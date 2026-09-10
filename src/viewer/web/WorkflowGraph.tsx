@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
 import type { Inspection } from '../../workflow/types';
+import { assignmentRows, NodeAssignment } from './NodeAssignment';
 
 function FitToCanvas({ container }: { container: RefObject<HTMLDivElement | null> }) {
   const { fitView } = useReactFlow();
@@ -48,7 +49,7 @@ export function WorkflowGraph({
     const graph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
     graph.setGraph({ rankdir: 'LR', nodesep: 35, ranksep: 55, marginx: 24, marginy: 24 });
     for (const node of snapshot.nodes) {
-      graph.setNode(node.id, { width: 230, height: 112 });
+      graph.setNode(node.id, { width: 230, height: 94 + assignmentRows(node).length * 20 });
     }
     for (const edge of snapshot.edges) {
       graph.setEdge(edge.source, edge.target);
@@ -59,9 +60,13 @@ export function WorkflowGraph({
   const blocked = new Set(snapshot.blocked_node_ids);
   const nodes = snapshot.nodes.map((node) => ({
     id: node.id,
-    position: { x: layout.node(node.id).x - 115, y: layout.node(node.id).y - 56 },
+    position: {
+      x: layout.node(node.id).x - 115,
+      y: layout.node(node.id).y - layout.node(node.id).height / 2,
+    },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
+    style: { height: layout.node(node.id).height },
     selected: selectedId === node.id,
     className: `workflow-node ${blocked.has(node.id) ? 'blocked' : node.execution.status}`,
     data: {
@@ -76,7 +81,7 @@ export function WorkflowGraph({
             <span>{blocked.has(node.id) ? 'blocked' : node.execution.status}</span>
           </div>
           <strong>{node.title}</strong>
-          <small>请求 · {node.requestedModel ?? '宿主默认'}</small>
+          <NodeAssignment node={node} compact />
         </button>
       ),
     },

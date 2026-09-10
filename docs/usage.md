@@ -1,10 +1,10 @@
 # 使用
 
-从 [v0.0.0 Release](https://github.com/Bin-Zhang-hhht/DDFlow/releases/tag/v0.0.0) 获取安装包与 `SHA256SUMS`。默认安装两个 Skill 和同版本 CLI（包含 Viewer）：先按下文安装两个 Skill，再完成 [CLI 安装](#安装-cli)。也可将 [README 中的安装提示词](../README.md#1-安装两个-skill-和-cli)复制给 AI 代为操作。两个 Skill 仍可脱离 CLI 独立使用；需要从源码打包时见[架构说明](architecture.md)。
+从 [v0.0.1 Release](https://github.com/Bin-Zhang-hhht/DDFlow/releases/tag/v0.0.1) 获取安装包与 `SHA256SUMS`。默认安装两个 Skill 和同版本 CLI（包含 Viewer）：先按下文安装两个 Skill，再完成 [CLI 安装](#安装-cli)。也可将 [README 中的安装提示词](../README.md#1-安装两个-skill-和-cli)复制给 AI 代为操作。两个 Skill 仍可脱离 CLI 独立使用；需要从源码打包时见[架构说明](architecture.md)。
 
 ## 安装两个 Skill
 
-准备 `ddflow-skills-0.0.0.tgz`，与随包 `SHA256SUMS` 核对后，在包所在目录运行。版本变化时替换文件名。
+准备 `ddflow-skills-0.0.1.tgz`，与随包 `SHA256SUMS` 核对后，在包所在目录运行。版本变化时替换文件名。
 
 ```powershell
 $skillRoot = Join-Path $env:USERPROFILE '.agents/skills'
@@ -15,7 +15,7 @@ foreach ($name in 'ddflow-planner', 'ddflow-executor') {
     }
 }
 New-Item -ItemType Directory -Force -Path $skillRoot | Out-Null
-tar -xzf .\ddflow-skills-0.0.0.tgz -C $skillRoot
+tar -xzf .\ddflow-skills-0.0.1.tgz -C $skillRoot
 if ($LASTEXITCODE -ne 0) { throw '解压失败，请检查安装目录' }
 ```
 
@@ -25,17 +25,18 @@ Codex 未出现入口时重启；ZCode 在“设置 → 技能”刷新。先显
 
 ## 规划、执行与继续
 
-在用户指定的仓库外目录开展业务任务，工作流、数据、产物和日志都保存在该目录。向 Planner 提供目标、输入路径、输出要求、验收标准和可用模型，例如：
+在用户指定的仓库外目录开展业务任务，工作流、准备材料、数据、产物和日志都保存在该目录。建议在宿主中为 Planner 选择擅长规则设计和复杂推理的较强模型，再提供目标、输入路径、输出要求、验收标准和可用执行模型；Skill 不自动切换当前模型。例如：
 
 ```text
 $ddflow-planner
 请在 <工作区绝对路径> 规划任务：<目标>。
 输入：<文件或目录>；输出：<交付物>；验收：<可检查的标准>。
 可用模型：<宿主实际支持的模型>。原始输入只读，结果写入新位置。
-只生成计划，完成后停止。
+提前确定已知规则，优先复用可信程序，按需准备执行脚本和固定校验器。
+不处理真实业务数据、不试跑业务程序；列出准备材料、实际检查范围和待确认事项，完成后停止。
 ```
 
-检查生成的 `workflow.md` 和 `nodes/*.md`，确认任务、模型、写入范围及验收要求，再显式执行：
+检查生成的 `workflow.md`、`nodes/*.md` 及其引用的准备材料，确认任务、模型、写入范围、调用方式及验收要求。准备材料是已有输入；规划只做已授权的只读资料检查和不执行业务代码的语法 / 静态检查，结果记录在 Execution Notes。新节点保持 pending，Result / Error 为空，不能把脚本已准备或静态检查通过当成业务验收通过。再显式执行：
 
 ```text
 $ddflow-executor
@@ -44,12 +45,18 @@ $ddflow-executor
 
 节点的 `Result` 记录交付和验收证据，`Error` 记录失败原因。节点失败后不会启动新任务；需要重试或改变计划时，先显式调用 Planner 重新规划，再调用 Executor。保留 completed / failed 历史，新尝试使用新节点；存在 running 时先由原执行者处理，不手动改回 pending。完整示例见[电商案例](online-retail.md)。
 
+主 Agent 只核对交付归属、文件与证据是否齐全、是否对应当前产物并满足明确门槛。确定性检查由节点调用固定程序，语义判断由计划内的复核节点承担；主 Agent 不重做业务复核，也不默认重复运行已经有有效证据的检查。选择经济模型作主 Agent 时，仍需确认其能够可靠派发并遵守协议，当前尚无该安排的成本与可靠性实测结论。
+
+向 Planner 明确检查执行者与证据要求。处理节点可交付待复核候选，后续复核节点验证质量，最终交付依赖必要复核。已有计划如果要求主 Agent 亲自进行语义复核，应先显式 Re-plan 调整 pending Contract；Executor 不自行删掉检查或临时增加评审 Agent。
+
+执行者按 Contract 使用准备材料，不默认重写脚本或重新推导规则。依赖实际数据才能确定的内容仍由计划内节点生成并验收；固定规则与校验器不能由使用它们的 worker 修改。Re-plan 发现 running 时文档与材料均只读，被 completed / failed 引用的材料也不原地覆盖；需要修订时写入新位置并保留历史。当前尚未实测这一准备流程的宿主执行效果与成本收益。
+
 ## 安装 CLI
 
 需要 Node.js 22.13+（22 系列）或 24+ 以及 npm：
 
 ```powershell
-npm install -g --omit=dev --ignore-scripts .\ddflow-0.0.0.tgz
+npm install -g --omit=dev --ignore-scripts .\ddflow-0.0.1.tgz
 ddflow --help
 ddflow inspect C:\workflows\example --json
 ddflow view C:\workflows\example
@@ -66,11 +73,20 @@ ddflow view C:\workflows\example
 | 用户级 Skill 目录 | `~/.agents/skills` | `~/.zcode/skills` |
 | 手动调用入口 | `$` 或技能菜单 | `$` 或 `/` 技能菜单 |
 | 显式调用约束 | 包内配置 `policy.allow_implicit_invocation: false`，强制性尚未专项实测 | 依赖 Skill 描述和正文约束，尚无已核对的等价开关 |
+| 子 Agent 配置 | 按宿主能力使用原生调用参数或预定义配置 | 用户手动配置子 Agent；Skill 按真实名称指派，不在调用时设置模型或思考强度 |
 | 实测范围 | 原有完整 Skill 目录发现和部分执行案例已验证；当前双 Skill 包原生发现未重测 | 安装发现和实际执行尚未验证 |
 
 宿主目录及配置依据沿用已核对的 [Codex 说明](https://learn.chatgpt.com/zh-Hans/docs/build-skills)和 [ZCode 说明](https://zcode.z.ai/cn/docs/skill)，不代表本次重新验证。ZCode 不应假定会读取 `openai.yaml`。
 
 当前 Codex 试验使用约定写入范围和主 Harness 验收的软约束，不提供文件系统硬隔离保证。模型请求可原生派发，但实际响应模型身份仍可能未知；思考强度预检与派发未专项验证。安装成功不证明这些执行能力，实际运行仍按[执行协议](../skills/protocol/execution-protocol.md)核验。
+
+### ZCode 使用预定义子 Agent
+
+根据用户反馈，ZCode 不支持在派发时设置子 Agent 模型和思考强度。请先在 ZCode 中手动配置所需子 Agent，并将真实可调用名称、用途和已设置的模型 / 强度信息提供给 Planner。Planner 会复用已有配置；缺少角色时先给出配置需求，由用户完成设置后再绑定。
+
+例如可对 Planner 说：“使用我已配置的子 Agent `<真实名称>` 执行清洗，沿用其模型和思考强度设置。先检查任务所需能力，只生成计划。”节点通过 `agent.recommended` 引用名称，并在 Prompt 明确使用约定 Agent；沿用配置时可省略 `model` 和 `reasoning_effort`。已有显式模型 / 强度要求仍须满足，不能以此忽略旧 Contract。
+
+Executor 按名指派；找不到约定 Agent 时停在预检，请用户完成配置，不自动退回默认 Agent。用户的配置说明不等于宿主实际运行证据，未知的实际模型 / 强度仍不填。此流程已写入 Skill，ZCode 原生配置与派发尚未实测。
 
 ## 重装与卸载
 
@@ -95,11 +111,11 @@ JSON 返回诊断、工作流、节点、依赖边和 ready / blocked 节点列�
 
 ## 查看工作流
 
-调用 Planner 或 Executor 后，目标目录明确且 workflow.md 与 nodes/ 已存在时，Skill 默认尝试启动已安装的 Viewer；新计划先写好文档。CLI 未安装则静默跳过，不安装、不询问，也不阻塞任务。用户明确要求不启动时跳过。
+Planner 完成计划写入与校验后、最终报告前，会实际检查 CLI 是否可用，启动或复用 Viewer，并尝试通过宿主原生浏览器能力打开页面，方便检查计划。Executor 在工作流文档就绪后也执行这一展示流程。CLI 未安装则静默跳过，不安装、不询问，也不阻塞任务。用户明确要求不启动时跳过。
 
 主 Harness 优先复用当前会话中已确认属于同一目录且仍可访问的 Viewer，否则通过宿主可保留的原生终端会话尝试启动一次。成功后返回实际输出并确认可访问的本机地址；启动失败或未能确认时简短说明并继续。宿主无法保留进程时跳过，不另建后台服务。报告后可保留 Viewer 供查看，在对应终端按 Ctrl+C 或通过宿主会话停止；Viewer 不执行节点，也不影响 Planner / Executor 的显式调用边界。
 
-这项行为由 Skill 指令交给宿主执行，当前自动启动与复用流程尚未完成宿主实测。也可单独请 AI 启动 Viewer，或手动运行：
+无法自动打开页面时，Skill 返回可点击的实际地址；同一 Viewer 已打开时不重复开页。这项行为由 Skill 指令交给宿主执行，当前自动探测、启动、复用与开页流程尚未完成宿主实测。也可单独请 AI 启动 Viewer，或手动运行：
 
 ```powershell
 ddflow view C:\workflows\example
@@ -110,6 +126,8 @@ ddflow view C:\workflows\example --port 43821
 打开终端打印的本地地址，保持进程运行，按 Ctrl+C 停止。默认选择空闲端口；固定端口被占用时直接报错。
 
 点击节点查看正文和元数据，点击空白画布或返回按钮查看工作流目标。图可缩放和平移，不能编辑；节点支持 Tab 聚焦和 Enter 选择。正文支持 Markdown，图片和链接只显示说明或文字，不加载产物。
+
+图中节点与详情按实际填写的信息展示执行安排：有 `agent.recommended` 时显示子 Agent，有 `agent.profile` 时显示配置提示。模型或思考强度的请求与实际记录均缺省时，隐藏对应行；全部缺省时不显示执行安排。详情区分别保留计划与实际记录，不从 Agent 名称推断模型或强度；单侧缺省以“—”表示。
 
 | 情况 | 页面行为 |
 |---|---|
