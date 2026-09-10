@@ -258,7 +258,6 @@ main {
 }
 .workflow-node.react-flow__node {
   width: 230px;
-  height: 112px;
   border-radius: 9px;
   border: 1px solid #cbd7d0;
   border-left: 4px solid #9baba3;
@@ -304,6 +303,7 @@ main {
 .workflow-node small {
   display: block;
   font-size: 10px;
+  line-height: 20px;
   color: #6c7e77;
   overflow: hidden;
   text-overflow: ellipsis;

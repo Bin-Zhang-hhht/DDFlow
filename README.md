@@ -14,7 +14,7 @@ Document-Driven Flow: explicit plans, model assignments, and verifiable delivera
 
 ddflow 适合输入明确、包含多个处理步骤、需要复核结果的任务，例如统一多份交易表的字段和格式，核对异常，交付标准表、来源映射与质量报告。
 
-- **先检查计划**：Planner 写清目标、依赖、输入输出、模型和验收标准，用户检查后再启动 Executor。
+- **先检查计划**：Planner 写清目标、依赖、模型与验收标准，按需准备规则和脚本，用户检查后再启动 Executor。
 - **按约定执行**：由宿主派发 Agent 任务，指定模型不静默替换，原始数据只读，业务产物写入约定目录。
 - **以产物验收**：验收通过才记录完成；失败保留原因，停止启动新任务，继续时显式重新规划。
 - **随时查看进展**：Markdown 保存计划与执行事实；CLI 检查结构，Viewer 展示依赖图、节点正文和诊断。
@@ -38,7 +38,7 @@ ddflow 适合输入明确、包含多个处理步骤、需要复核结果的任�
 完成后检查两个 Skill 的入口和随包引用文件，运行 ddflow --help 验证 CLI，告诉我安装路径，以及如何刷新宿主、调用 Skill 和打开 Viewer。
 ```
 
-当前版本为 **v0.0.0**，安装包见 [GitHub Releases](https://github.com/Bin-Zhang-hhht/DDFlow/releases/tag/v0.0.0)。已有本地源码或分发包时，把位置一并告诉 AI。默认一并安装两个 Skill 和 CLI；CLI 需要 Node.js，两个 Skill 仍可独立使用。手动操作见[安装说明](docs/usage.md#安装两个-skill)。
+当前版本为 **v0.0.1**，安装包见 [GitHub Releases](https://github.com/Bin-Zhang-hhht/DDFlow/releases/tag/v0.0.1)。已有本地源码或分发包时，把位置一并告诉 AI。默认一并安装两个 Skill 和 CLI；CLI 需要 Node.js，两个 Skill 仍可独立使用。手动操作见[安装说明](docs/usage.md#安装两个-skill)。
 
 目标宿主为 Codex 和 ZCode。Codex 已有部分发现与执行验证，ZCode 原生安装发现和执行尚未验证；详见[宿主兼容说明](docs/usage.md#宿主差异与已知限制)。
 
@@ -53,10 +53,11 @@ $ddflow-planner
 交付：标准交易表、来源映射、异常清单和质量报告。
 验收：每条输入记录都有去向，合并或排除有依据，金额汇总可核对。
 可用模型：<宿主实际支持的模型>。
-请先澄清缺少的业务规则，只生成计划，完成后停止。
+请先澄清缺少的业务规则，生成计划并按需准备执行脚本和固定校验器。
+不处理真实业务数据、不试跑业务程序，说明准备材料和未验证事项，完成后停止。
 ```
 
-检查生成的 `workflow.md` 和 `nodes/*.md`，确认任务范围、依赖、模型、产物路径与验收要求。
+建议先在宿主中为 Planner 选择较强模型。检查生成的 `workflow.md`、`nodes/*.md` 及引用的准备材料，确认任务范围、依赖、模型、产物路径与验收要求；材料已准备不代表业务已验证。
 
 ### 3. 执行并检查结果
 
@@ -71,7 +72,7 @@ $ddflow-executor
 
 ### 查看工作流
 
-调用 Planner 或 Executor 时，会在工作流文档就绪后默认尝试启动 Viewer，并返回实际访问地址；未安装 CLI 就直接跳过。也可以单独把这段话发给 AI：
+Planner 完成计划后会检查 CLI，默认尝试启动或复用 Viewer 并打开页面，方便检查；Executor 也会尝试展示 Viewer。无法自动开页时返回实际访问地址，未安装 CLI 就直接跳过。也可以单独把这段话发给 AI：
 
 ```text
 请为 <工作流目录绝对路径> 启动 ddflow view，告诉我实际访问地址和停止服务的方法。

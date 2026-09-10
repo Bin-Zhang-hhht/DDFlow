@@ -2,8 +2,8 @@
 name: ddflow-executor
 license: MIT
 metadata:
-  version: 0.0.0
-description: Execute an existing ddflow document workflow only when the user explicitly invokes ddflow-executor or explicitly requests its execution phase. Preflight model bindings and required skills, dispatch bounded native workers, verify artifacts, preserve contracts, record truthful facts and stop all new launches on any final node failure. Never re-plan automatically.
+  version: 0.0.1
+description: Execute an existing ddflow document workflow only when the user explicitly invokes ddflow-executor or explicitly requests its execution phase. Dispatch bounded native workers, check delivery and acceptance evidence without repeating business review, preserve contracts and stop all new launches on any final node failure. Never re-plan automatically.
 ---
 
 # ddflow Executor
@@ -33,23 +33,27 @@ Planner 完成、出现 ready 节点、工作流文件存在，都不等于用�
 4. 已有 running 节点必须能识别其 live owner；不能确认就停止，不重置、不抢占。
 5. 若有历史 failed，确认已显式 Re-plan 且剩余 pending 路径不经过失败前置；无依据就停止。
 6. 核对全部 pending 节点的模型、Agent、必需 Skill、工具、权限、业务规则与执行前提。
+   验收须已明确由哪个程序或既定节点执行；缺少必要的业务复核安排时停止并交还用户 Re-plan，不由主模型补做。
 7. 上游将生成的产物不是缺失外部输入；但外部输入和必要确认必须在相关节点启动前落实。
+   Planner 已准备的规则、脚本与校验器按已有输入核对路径、来源和使用前提；准备说明或静态检查不能替代节点的真实执行证据，不默认重写材料或重做规则设计。
 8. 不能满足预检时报告并停止，未启动节点保持 pending，不写虚假的失败或开始时间。
 
 ## 默认只读 Viewer
 
 确认目标目录且 workflow.md 与 nodes/ 已存在后，默认尝试启动已安装的 `ddflow view "<工作流目录绝对路径>"`；用户要求不启动时跳过。
-按[只读 Viewer 规则](../protocol/execution-protocol.md#只读-viewer)复用会话、确认实际地址；CLI 未安装时静默跳过，不安装、不询问、不阻塞执行。Viewer 的结果不替代全阶段预检或业务验收。
+按[只读 Viewer 规则](../protocol/execution-protocol.md#只读-viewer)检查 CLI、复用会话、确认实际地址并尝试打开页面；CLI 未安装时静默跳过，不安装、不询问、不阻塞执行。Viewer 的结果不替代全阶段预检或业务验收。
 
 ## 模型与 Skill
 
 已指定 `model` 是绑定，不得静默换成更贵、更便宜或默认模型。
 核对原生子 Agent 配置、每次调用覆盖、全局默认与组织限制；自然语言无法使模型自行切换。
-省略 model 时，使用已披露的宿主默认。
+省略 model 时，使用已披露的所选子 Agent 配置或宿主默认。
 
-`reasoning_effort` 显式值同样是绑定：核对模型支持、原生派发能力与覆盖设置，派发时真正传入；不能仅写入 Prompt。不支持、无法传入或已知被覆盖时停止，节点保持 pending；省略则接受已披露的默认强度，不自动补值或映射。只指定强度时也核对默认模型。
+`reasoning_effort` 显式值同样是绑定：核对模型支持、原生派发能力与覆盖设置，通过调用参数或已配置的子 Agent 落实；不能仅写入 Prompt。不支持、两种方式均无法落实或已知被覆盖时停止，节点保持 pending；省略则接受已披露的默认强度，不自动补值或映射。只指定强度时也核对默认模型。
 
-推荐 Agent 不存在时，只有 Generic Agent 仍满足模型、工具、Skill、权限要求才可退化，并披露。
+ZCode 按[预定义子 Agent 派发](../protocol/execution-protocol.md#zcode-预定义子-agent-派发)使用用户已手动配置的 Agent，不尝试在调用时覆盖模型或思考强度。缺少约定 Agent 时请用户完成配置，节点保持 pending；不得退回 Generic Agent 绕过这项约定。
+
+推荐 Agent 不存在时，只有 Contract 未要求使用该 Agent，且 Generic Agent 仍满足模型、工具、Skill、权限要求才可退化，并披露。
 必需 Skill 要真实进入 worker 上下文；不能假设父 Agent 已加载就自动继承。
 缺失依赖不自动联网安装，不通过虚构名字或软提示替代真实能力。
 
@@ -63,8 +67,10 @@ ready 仅为 pending 且所有直接依赖 completed；它不是完整的执行�
 每次实际 launch 前检查最新 Contract、绑定与停止条件；排队节点保持 pending。
 
 给 worker 提供当前任务 Contract、必要全局规则、相关上游产物与所需 Skill。
+派发时按[任务简报模板](../protocol/execution-protocol.md#任务简报模板)组织信息，明确自主范围、求助条件与返回证据；模板不修改既有 Contract。
 使用宿主原生独立上下文；不要发送所有节点、全部聊天或整张原始大表。
 同形小任务可以节点内批量处理，避免一行数据一次 Agent 调用。
+按[使用规划准备材料](../protocol/execution-protocol.md#使用规划准备材料)交接已有材料及调用方式；固定规则和验收器只读，脚本修改遵守 Contract。材料不适用时按执行边界处理，不让协调模型接管业务设计。
 
 默认 worker 只写允许的业务产物，不写工作流文档，不改规则 / 固定验收器，不另行调用其他模型。
 用宿主原生能力约束工具与权限。只有 Prompt 约束时披露它是软约束，不能宣称硬隔离。
@@ -81,18 +87,20 @@ ready 仅为 pending 且所有直接依赖 completed；它不是完整的执行�
 
 ## 验收与提交
 
-worker 正常返回不等于成功。读取真实产物，运行已有校验并核对 Completion Criteria。
-需要语义复核时遵守既定方式；不能只凭 worker 自述“检查通过”。
+主 Agent 只负责执行秩序、最小交付与证据核对，不承担业务内容复核；不逐条重读数据、重做分析或重新评价复核结论。
+按[逐项验收](../protocol/execution-protocol.md#逐项验收)确认返回归属、产物可访问、检查证据对应当前交付且覆盖 Completion Criteria，并对照明确的通过条件。
+确定性检查交给既定程序，语义复核交给计划中的复核节点。证据齐全一致时直接据此判定，不重复执行相同检查；只有证据缺失、矛盾或对象变化等情况才针对性核对。
+worker 自述“检查通过”不足以完成；主 Agent 不得接管缺失的业务复核或临时派生评审 Agent。
 不得为过关修改规则、删去失败样本、改变金标准或伪造日志。
 
-Result 记录产物位置、实际检查与结果、来源映射、已知模型证据及限制。
+Result 记录产物位置、检查执行者 / 程序、实际结果与证据位置、已知模型证据及限制；引用的检查不写成主 Agent 亲自执行。
 Error 记录失败原因、已做到哪里、部分产物与所需介入。
 只在 Completion Gate 通过后写 completed；否则在无法依约继续时写 failed。
 尽量一次定向提交摘要、时间和终态，不把文件部分写入称为事务保证。
 
 预先约定的候选结果加待复核表可以成功；事后把坏结果改称“异常”不能绕过失败。
 没有异常的预定复核节点仍完成检查并说明依据，不使用 skipped。
-最终发布节点要校验实际最终产物，而不是只引用中间检查结论。
+最终交付节点要提供针对实际最终产物的检查证据；主 Agent 不再重复进行业务验收。
 
 ## 重试、失败与安全停止
 
@@ -111,6 +119,7 @@ Error 记录失败原因、已做到哪里、部分产物与所需介入。
 
 ## 重读与最终报告
 
+上下文压缩或会话交接后，先按[上下文恢复](../protocol/execution-protocol.md#上下文恢复)核对文档、执行者与产物；摘要不提供派发许可。
 每波完成先检查失败，再重新读取、校验文档和计算 ready；不能缓存旧队列跨越文档变化。
 全部完成、无可推进任务、文档非法、能力不足、未知 owner、用户要求停止或需 Re-plan 时停止。
 

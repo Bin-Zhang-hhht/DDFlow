@@ -1,6 +1,7 @@
 import type { Node } from '../../workflow/types';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { NodeAssignment } from './NodeAssignment';
 
 // Format prose without activating HTML, remote media, or artifact links.
 export function Sections({ sections }: { sections: Record<string, string> }) {
@@ -57,29 +58,7 @@ export function NodePanel({
         <dt>依赖节点</dt>
         <dd>{node.depends_on.join(', ') || '无'}</dd>
       </dl>
-      <h3>模型与思考强度</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>字段</th>
-            <th>请求 / 契约</th>
-            <th>实际记录</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th>模型</th>
-            <td>{node.requestedModel ?? '未指定（宿主默认）'}</td>
-            <td>{node.execution.modelUsed ?? '未知'}</td>
-          </tr>
-          <tr>
-            <th>思考强度</th>
-            <td>{node.requestedReasoningEffort ?? '未指定（宿主默认）'}</td>
-            <td>{node.execution.reasoningEffortUsed ?? '未知'}</td>
-          </tr>
-        </tbody>
-      </table>
-      <p className="hint">实际记录来自 execution 字段，Viewer 不独立验证宿主证据。</p>
+      <NodeAssignment node={node} />
       <Sections sections={node.sections} />
       <details>
         <summary>完整 YAML 元数据（只读）</summary>
